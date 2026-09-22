@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
+import { View, Text, SectionList, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import { cores } from '../theme/colors'
 import { fontes, tamanhos } from '../theme/fonts'
@@ -8,10 +8,22 @@ import { buscarRegistrosDeHoje, marcarHabito, desmarcarHabito, calcularStreak } 
 import ConfirmModal from '../components/ConfirmModal'
 import SugestaoHabitoModal from '../components/SugestaoHabitoModal'
 import FrequenciaSelector, { FrequenciaValor } from '../components/FrequenciaSelector'
+import CategoriaSelector from '../components/CategoriaSelector'
 import { HabitoSugerido } from '../data/habitosSugeridos'
+import { ORDEM_CATEGORIAS, nomeCategoria } from '../data/categorias'
+import { dataReferenciaInicial } from '../utils/frequencia'
+import { hojeISO } from '../utils/data'
 
-function hojeISO() {
-  return new Date().toISOString().slice(0, 10)
+function construirSecoes(habitos: any[]) {
+  const grupos: Record<string, any[]> = {}
+  habitos.forEach(h => {
+    const tipo = ORDEM_CATEGORIAS.includes(h.tipo) ? h.tipo : 'geral'
+    if (!grupos[tipo]) grupos[tipo] = []
+    grupos[tipo].push(h)
+  })
+  return ORDEM_CATEGORIAS
+    .filter(tipo => grupos[tipo]?.length)
+    .map(tipo => ({ title: nomeCategoria(tipo), data: grupos[tipo] }))
 }
 
 export default function HojeScreen() {
@@ -22,6 +34,8 @@ export default function HojeScreen() {
   const [criando, setCriando] = useState(false)
   const [formNome, setFormNome] = useState('')
   const [formEmoji, setFormEmoji] = useState('')
+  const [formTipo, setFormTipo] = useState('geral')
+  const [formPersonalizado, setFormPersonalizado] = useState(false)
   const [formFrequencia, setFormFrequencia] = useState<FrequenciaValor>({ tipo: 'diario', dias: [] })
 
   const [habitoParaExcluir, setHabitoParaExcluir] = useState<{ id: number; nome: string } | null>(null)
@@ -52,9 +66,13 @@ export default function HojeScreen() {
     if (sugestao) {
       setFormNome(sugestao.nome)
       setFormEmoji(sugestao.emoji)
+      setFormTipo(sugestao.tipo)
+      setFormPersonalizado(false)
     } else {
       setFormNome('')
       setFormEmoji('')
+      setFormTipo('geral')
+      setFormPersonalizado(true)
     }
     setFormFrequencia({ tipo: 'diario', dias: [] })
     setSugestaoVisivel(false)
@@ -69,9 +87,10 @@ export default function HojeScreen() {
     await criarHabito(
       nome,
       formEmoji.trim() || null,
+      formTipo,
       formFrequencia.tipo,
       formFrequencia.tipo === 'semana' ? formFrequencia.dias : null,
-      hojeISO()
+      dataReferenciaInicial(formFrequencia.tipo, hojeISO())
     )
 
     cancelarCriacao()
@@ -82,6 +101,8 @@ export default function HojeScreen() {
     setCriando(false)
     setFormNome('')
     setFormEmoji('')
+    setFormTipo('geral')
+    setFormPersonalizado(false)
     setFormFrequencia({ tipo: 'diario', dias: [] })
   }
 
@@ -133,6 +154,8 @@ export default function HojeScreen() {
               />
             </View>
 
+            {formPersonalizado && <CategoriaSelector valor={formTipo} onChange={setFormTipo} />}
+
             <FrequenciaSelector valor={formFrequencia} onChange={setFormFrequencia} />
 
             <View style={styles.formBotoes}>
@@ -149,9 +172,13 @@ export default function HojeScreen() {
         {habitos.length === 0 ? (
           <Text style={styles.vazio}>nenhum hábito pra hoje</Text>
         ) : (
-          <FlatList
-            data={habitos}
+          <SectionList
+            sections={construirSecoes(habitos)}
             keyExtractor={item => String(item.id)}
+            stickySectionHeadersEnabled={false}
+            renderSectionHeader={({ section }) => (
+              <Text style={styles.categoriaTitulo}>{section.title}</Text>
+            )}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.habitoRow}
@@ -188,7 +215,7 @@ export default function HojeScreen() {
 //poggers
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: cores.fundo, paddingTop: 60, paddingHorizontal: 24 },
+  container: { flex: 1, backgroundColor: cores.fundo, paddingTop: 8, paddingHorizontal: 24 },
   saudacao: { color: cores.texto, fontFamily: fontes.corpo, fontSize: tamanhos.corpo, marginBottom: 20 },
   streakBox: { alignItems: 'center', marginBottom: 32 },
   streakNumero: { color: cores.acento, fontFamily: fontes.numero, fontSize: tamanhos.streak },
@@ -213,6 +240,11 @@ const styles = StyleSheet.create({
   salvarBtn: { backgroundColor: cores.acento, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
   salvarTxt: { color: cores.fundo, fontFamily: fontes.corpo, fontSize: tamanhos.sub, fontWeight: '600' },
   vazio: { color: cores.textoSuave, fontFamily: fontes.corpo, fontSize: tamanhos.sub, textAlign: 'center', marginTop: 40 },
+  categoriaTitulo: {
+    color: cores.acento, fontFamily: fontes.corpo, fontSize: 11,
+    fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase',
+    marginTop: 14, marginBottom: 6,
+  },
   habitoRow: {
     flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14,
     borderBottomWidth: 1, borderBottomColor: cores.fundoInput,

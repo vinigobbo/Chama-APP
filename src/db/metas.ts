@@ -42,9 +42,19 @@ export async function excluirMeta(id: number) {
 export async function buscarUltimoProgresso(metaId: number) {
   const db = getBanco()
   return await db.getFirstAsync(
-    'SELECT valor, data FROM registros_progresso WHERE meta_id = ? ORDER BY data DESC LIMIT 1',
+    'SELECT valor, data FROM registros_progresso WHERE meta_id = ? ORDER BY data DESC, id DESC LIMIT 1',
     [metaId]
   ) as { valor: number; data: string } | null
+}
+
+export async function contarMetasConcluidas() {
+  const db = getBanco()
+  const row = await db.getFirstAsync(
+    'SELECT COUNT(*) AS total FROM metas_semestrais m WHERE (' +
+    'SELECT p.valor FROM registros_progresso p WHERE p.meta_id = m.id ORDER BY p.data DESC, p.id DESC LIMIT 1' +
+    ') >= m.valor_alvo'
+  ) as { total: number }
+  return row.total
 }
 
 export async function registrarProgresso(metaId: number, data: string, valor: number) {

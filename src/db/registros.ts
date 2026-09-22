@@ -1,5 +1,6 @@
 import { getBanco } from './database'
-import { habitoAplicavelNaData } from '../utils/frequencia'
+import { habitoAplicavelNaData, somarDias } from '../utils/frequencia'
+import { hojeISO } from '../utils/data'
 
 export async function buscarRegistrosDeHoje(data: string) {
   const db = getBanco()
@@ -44,39 +45,66 @@ export async function desmarcarHabito(habitoId: number, data: string) {
   )
 }
 
-export async function calcularStreak() {
+async function carregarHistorico() {
   const db = getBanco()
   const habitos = await db.getAllAsync('SELECT * FROM habitos WHERE ativo = 1') as any[]
-  if (habitos.length === 0) return 0
+  const registros = await db.getAllAsync(
+    'SELECT habito_id, data FROM registros_diarios WHERE feito = 1'
+  ) as Array<{ habito_id: number; data: string }>
 
-  let streak = 0
-  let dia = new Date()
-
-  while (true) {
-    const dataStr = dia.toISOString().slice(0, 10)
-    const habitosDoDia = habitos.filter(h => habitoAplicavelNaData(h, dataStr))
-
-    if (habitosDoDia.length === 0) {
-      dia.setDate(dia.getDate() - 1)
-      continue
-    }
-
-    const registros = await db.getAllAsync(
-      'SELECT habito_id FROM registros_diarios WHERE data = ? AND feito = 1',
-      [dataStr]
-    ) as Array<{ habito_id: number }>
-
-    const todosFeitos = habitosDoDia.every(h => registros.some(r => r.habito_id === h.id))
-
-    if (todosFeitos) {
-      streak++
-      dia.setDate(dia.getDate() - 1)
-    } else {
-      break
-    }
+  const feitos = new Set(registros.map(r => `${r.habito_id}|${r.data}`))
+  let primeiroDia: string | null = null
+  for (const r of registros) {
+    if (!primeiroDia || r.data < primeiroDia) primeiroDia = r.data
   }
+  return { habitos, feitos, primeiroDia }
+}
 
+// null = nenhum hábito valia nesse dia (não conta nem quebra o streak)
+function diaCompleto(habitos: any[], feitos: Set<string>, data: string) {
+  const habitosDoDia = habitos.filter(h => habitoAplicavelNaData(h, data))
+  if (habitosDoDia.length === 0) return null
+  return habitosDoDia.every(h => feitos.has(`${h.id}|${data}`))
+}
+
+export async function calcularStreak() {
+  const { habitos, feitos, primeiroDia } = await carregarHistorico()
+  if (habitos.length === 0 || !primeiroDia) return 0
+
+  // de hoje pra trás; antes do primeiro registro nenhum dia pode estar completo
+  let streak = 0
+  for (let dia = hojeISO(); dia >= primeiroDia; dia = somarDias(dia, -1)) {
+    const completo = diaCompleto(habitos, feitos, dia)
+    if (completo === null) continue
+    if (!completo) break
+    streak++
+  }
   return streak
+}
+
+export async function calcularMaiorStreak() {
+  const { habitos, feitos, primeiroDia } = await carregarHistorico()
+  if (habitos.length === 0 || !primeiroDia) return 0
+
+  // do primeiro registro até hoje, guardando a maior sequência de dias completos
+  let maior = 0
+  let atual = 0
+  const hoje = hojeISO()
+  for (let dia = primeiroDia; dia <= hoje; dia = somarDias(dia, 1)) {
+    const completo = diaCompleto(habitos, feitos, dia)
+    if (completo === null) continue
+    atual = completo ? atual + 1 : 0
+    if (atual > maior) maior = atual
+  }
+  return maior
+}
+
+export async function contarHabitosConcluidos() {
+  const db = getBanco()
+  const row = await db.getFirstAsync(
+    'SELECT COUNT(*) AS total FROM registros_diarios WHERE feito = 1'
+  ) as { total: number }
+  return row.total
 }
 
 export async function buscarDiasAcademiaRange(dataInicio: string, dataFim: string) {
@@ -84,7 +112,7 @@ export async function buscarDiasAcademiaRange(dataInicio: string, dataFim: strin
   return await db.getAllAsync(
     'SELECT r.data FROM registros_diarios r ' +
     'JOIN habitos h ON h.id = r.habito_id ' +
-    'WHERE h.nome = "academia" AND r.feito = 1 ' +
+    "WHERE LOWER(TRIM(h.nome)) = 'academia' AND r.feito = 1 " +
     'AND r.data BETWEEN ? AND ?',
     [dataInicio, dataFim]
   ) as Array<{ data: string }>

@@ -7,6 +7,7 @@ export const CRIAR_TABELAS = [
     frequencia_tipo TEXT NOT NULL DEFAULT 'diario',
     frequencia_dias TEXT,
     data_referencia TEXT,
+    tipo TEXT NOT NULL DEFAULT 'geral',
     ativo INTEGER NOT NULL DEFAULT 1
   )`,
 

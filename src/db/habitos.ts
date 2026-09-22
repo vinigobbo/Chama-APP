@@ -12,6 +12,7 @@ export async function buscarHabitosAtivos() {
     frequencia_tipo: string
     frequencia_dias: string | null
     data_referencia: string | null
+    tipo: string
     ativo: number
   }>
 }
@@ -19,16 +20,18 @@ export async function buscarHabitosAtivos() {
 export async function criarHabito(
   nome: string,
   emoji: string | null,
+  tipo: string,
   frequenciaTipo: 'diario' | 'semana' | 'intervalo',
   frequenciaDias: number[] | null,
   dataReferencia: string
 ) {
   const db = getBanco()
   await db.runAsync(
-    'INSERT INTO habitos (nome, emoji, frequencia_tipo, frequencia_dias, data_referencia) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO habitos (nome, emoji, tipo, frequencia_tipo, frequencia_dias, data_referencia) VALUES (?, ?, ?, ?, ?, ?)',
     [
       nome,
       emoji,
+      tipo,
       frequenciaTipo,
       frequenciaDias ? JSON.stringify(frequenciaDias) : null,
       dataReferencia,

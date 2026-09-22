@@ -65,7 +65,7 @@ export default function FrequenciaSelector({ valor, onChange }: Props) {
 
       {valor.tipo === 'intervalo' && (
         <Text style={styles.aviso}>
-          começa hoje e alterna a cada dia, hoje conta, amanhã folga, depois conta de novo
+          começa amanhã e alterna a cada dia: hoje não conta, amanhã conta, depois folga, e assim por diante
         </Text>
       )}
     </View>

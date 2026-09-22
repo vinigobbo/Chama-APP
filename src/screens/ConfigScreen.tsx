@@ -5,17 +5,32 @@ import { cores } from '../theme/colors'
 import { fontes, tamanhos } from '../theme/fonts'
 import { buscarConfig, salvarConfig } from '../db/config'
 import { pedirPermissao, agendarLembrete, cancelarLembrete } from '../notifications/scheduler'
+import { calcularStreak, calcularMaiorStreak, contarHabitosConcluidos } from '../db/registros'
+import { contarMetasConcluidas } from '../db/metas'
 
 export default function ConfigScreen() {
   const [lembreteAtivo, setLembreteAtivo] = useState(false)
   const [horario, setHorario] = useState('13:00')
   const [editando, setEditando] = useState(false)
+  const [estatisticas, setEstatisticas] = useState({
+    habitosConcluidos: 0,
+    metasConcluidas: 0,
+    streakAtual: 0,
+    maiorStreak: 0,
+  })
 
   async function carregarDados() {
     const ativo = await buscarConfig('lembrete_ativo')
     const hora = await buscarConfig('horario_lembrete')
     setLembreteAtivo(ativo === '1')
     if (hora) setHorario(hora)
+
+    setEstatisticas({
+      habitosConcluidos: await contarHabitosConcluidos(),
+      metasConcluidas: await contarMetasConcluidas(),
+      streakAtual: await calcularStreak(),
+      maiorStreak: await calcularMaiorStreak(),
+    })
   }
 
   useFocusEffect(
@@ -54,8 +69,6 @@ export default function ConfigScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>configurações</Text>
-
       <View style={styles.card}>
         <View style={styles.linha}>
           <Text style={styles.label}>lembrete diário</Text>
@@ -94,6 +107,21 @@ export default function ConfigScreen() {
         )}
       </View>
 
+      <Text style={styles.secaoTitulo}>estatísticas</Text>
+      <View style={styles.card}>
+        {[
+          ['hábitos concluídos', estatisticas.habitosConcluidos],
+          ['metas concluídas', estatisticas.metasConcluidas],
+          ['streak atual', estatisticas.streakAtual],
+          ['maior streak', estatisticas.maiorStreak],
+        ].map(([label, valor]) => (
+          <View key={label} style={styles.linha}>
+            <Text style={styles.label}>{label}</Text>
+            <Text style={styles.estatisticaValor}>{valor}</Text>
+          </View>
+        ))}
+      </View>
+
       <View style={styles.sobre}>
         <Text style={styles.sobreTexto}>chama v1.0</Text>
         <Text style={styles.sobreTexto}>dados salvos apenas no seu celular</Text>
@@ -103,8 +131,7 @@ export default function ConfigScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: cores.fundo, paddingTop: 60, paddingHorizontal: 24 },
-  titulo: { color: cores.texto, fontFamily: fontes.corpo, fontSize: tamanhos.titulo, marginBottom: 24 },
+  container: { flex: 1, backgroundColor: cores.fundo, paddingTop: 16, paddingHorizontal: 24 },
   card: { backgroundColor: cores.fundoCartao, borderRadius: 10, padding: 16 },
   linha: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12 },
   label: { color: cores.texto, fontFamily: fontes.corpo, fontSize: tamanhos.corpo },
@@ -116,6 +143,12 @@ const styles = StyleSheet.create({
   },
   horarioValor: { color: cores.acento, fontFamily: fontes.numero, fontSize: tamanhos.corpo },
   salvarTxt: { color: cores.acento, fontFamily: fontes.corpo, fontSize: tamanhos.corpo, fontWeight: '600' },
+  secaoTitulo: {
+    color: cores.acento, fontFamily: fontes.corpo, fontSize: 11,
+    fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase',
+    marginTop: 24, marginBottom: 8,
+  },
+  estatisticaValor: { color: cores.acento, fontFamily: fontes.numero, fontSize: tamanhos.corpo },
   sobre: { marginTop: 40, alignItems: 'center', gap: 4 },
   sobreTexto: { color: cores.textoSuave, fontFamily: fontes.corpo, fontSize: tamanhos.sub },
 })

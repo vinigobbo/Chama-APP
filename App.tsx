@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-import { View, ActivityIndicator, StyleSheet } from 'react-native'
-import { NavigationContainer } from '@react-navigation/native'
+import { View, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native'
+import { NavigationContainer, DarkTheme } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useFonts } from 'expo-font'
 import { Ionicons } from '@expo/vector-icons'
 
 import { cores } from './src/theme/colors'
+import { fontes } from './src/theme/fonts'
 import { abrirBanco } from './src/db/database'
 
 import HojeScreen from './src/screens/HojeScreen'
@@ -14,6 +16,61 @@ import AcademiaScreen from './src/screens/AcademiaScreen'
 import ConfigScreen from './src/screens/ConfigScreen'
 
 const Tab = createBottomTabNavigator()
+const Stack = createNativeStackNavigator()
+
+const tema = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: cores.acento,
+    background: cores.fundo,
+    card: cores.fundo,
+    text: cores.texto,
+    border: 'transparent',
+  },
+}
+
+const cabecalho = {
+  headerStyle: { backgroundColor: cores.fundo },
+  headerTintColor: cores.texto,
+  headerTitleStyle: { color: cores.texto, fontFamily: fontes.corpo },
+  headerShadowVisible: false,
+}
+
+function Abas() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route, navigation }) => ({
+        ...cabecalho,
+        headerTitle: '',
+        headerRight: () => (
+          <TouchableOpacity style={styles.engrenagem} onPress={() => navigation.navigate('Config')}>
+            <Ionicons name="settings-outline" size={22} color={cores.texto} />
+          </TouchableOpacity>
+        ),
+        tabBarStyle: {
+          backgroundColor: cores.fundo,
+          borderTopColor: cores.fundoInput,
+          height: 60,
+        },
+        tabBarActiveTintColor: cores.acento,
+        tabBarInactiveTintColor: cores.textoSuave,
+        tabBarIcon: ({ color, size }) => {
+          const icones: Record<string, any> = {
+            Hoje: 'today-outline',
+            Metas: 'flag-outline',
+            Academia: 'barbell-outline',
+          }
+          return <Ionicons name={icones[route.name]} size={size} color={color} />
+        },
+      })}
+    >
+      <Tab.Screen name="Hoje" component={HojeScreen} />
+      <Tab.Screen name="Metas" component={MetasScreen} />
+      <Tab.Screen name="Academia" component={AcademiaScreen} />
+    </Tab.Navigator>
+  )
+}
 
 export default function App() {
   const [bancoPronto, setBancoPronto] = useState(false)
@@ -40,33 +97,11 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarStyle: {
-            backgroundColor: cores.fundo,
-            borderTopColor: cores.fundoInput,
-            height: 60,
-          },
-          tabBarActiveTintColor: cores.acento,
-          tabBarInactiveTintColor: cores.textoSuave,
-          tabBarIcon: ({ color, size }) => {
-            const icones: Record<string, any> = {
-              Hoje: 'today-outline',
-              Metas: 'flag-outline',
-              Academia: 'barbell-outline',
-              Config: 'settings-outline',
-            }
-            return <Ionicons name={icones[route.name]} size={size} color={color} />
-          },
-        })}
-      >
-        <Tab.Screen name="Hoje" component={HojeScreen} />
-        <Tab.Screen name="Metas" component={MetasScreen} />
-        <Tab.Screen name="Academia" component={AcademiaScreen} />
-        <Tab.Screen name="Config" component={ConfigScreen} />
-      </Tab.Navigator>
+    <NavigationContainer theme={tema}>
+      <Stack.Navigator screenOptions={{ ...cabecalho, contentStyle: { backgroundColor: cores.fundo } }}>
+        <Stack.Screen name="Abas" component={Abas} options={{ headerShown: false }} />
+        <Stack.Screen name="Config" component={ConfigScreen} options={{ title: 'configurações' }} />
+      </Stack.Navigator>
     </NavigationContainer>
   )
 }
@@ -78,4 +113,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  engrenagem: { paddingHorizontal: 16, paddingVertical: 8 },
 })

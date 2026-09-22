@@ -15,6 +15,7 @@ import {
 } from '../db/treinos'
 import SugestaoExercicioModal from '../components/SugestaoExercicioModal'
 import ConfirmModal from '../components/ConfirmModal'
+import { formatarISO } from '../utils/data'
 
 const SEMANAS_VISIVEIS = 26
 const CELULA = 15
@@ -43,7 +44,7 @@ function gerarSemanas(numSemanas: number) {
 }
 
 function paraISO(data: Date) {
-  return data.toISOString().slice(0, 10)
+  return formatarISO(data)
 }
 
 export default function AcademiaScreen() {
@@ -289,7 +290,7 @@ export default function AcademiaScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: cores.fundo },
-  scrollContent: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 60 },
+  scrollContent: { paddingTop: 8, paddingHorizontal: 24, paddingBottom: 60 },
   titulo: { color: cores.texto, fontFamily: fontes.corpo, fontSize: tamanhos.titulo, marginBottom: 24 },
   gridRow: { flexDirection: 'row' },
   mesesRow: { flexDirection: 'row' },

@@ -7,6 +7,9 @@ import { buscarMetas, criarMeta, buscarUltimoProgresso, registrarProgresso, excl
 import { MetaSugerida } from '../data/metasSugeridas'
 import SugestaoMetaModal from '../components/SugestaoMetaModal'
 import ConfirmModal from '../components/ConfirmModal'
+import PeriodoSelector from '../components/PeriodoSelector'
+import { Periodo, calcularDataFim } from '../utils/periodos'
+import { hojeISO } from '../utils/data'
 
 function diasRestantes(dataFim: string) {
   const hoje = new Date()
@@ -27,7 +30,7 @@ export default function MetasScreen() {
   const [formEmoji, setFormEmoji] = useState('')
   const [formAlvo, setFormAlvo] = useState('')
   const [formUnidade, setFormUnidade] = useState('')
-  const [formFim, setFormFim] = useState('')
+  const [formPeriodo, setFormPeriodo] = useState<Periodo>('semestral')
 
   const [metaParaExcluir, setMetaParaExcluir] = useState<{ id: number; nome: string } | null>(null)
 
@@ -55,8 +58,7 @@ export default function MetasScreen() {
   async function salvarProgresso(metaId: number) {
     const valor = parseFloat(novoValor)
     if (isNaN(valor)) return
-    const hoje = new Date().toISOString().slice(0, 10)
-    await registrarProgresso(metaId, hoje, valor)
+    await registrarProgresso(metaId, hojeISO(), valor)
     setNovoValor('')
     setMetaAberta(null)
     await carregarDados()
@@ -78,8 +80,8 @@ export default function MetasScreen() {
 
   async function adicionarMeta() {
     const alvo = parseFloat(formAlvo)
-    if (!formNome.trim() || isNaN(alvo) || !formFim.trim()) return
-    const hoje = new Date().toISOString().slice(0, 10)
+    if (!formNome.trim() || isNaN(alvo)) return
+    const hoje = hojeISO()
     await criarMeta(
       formNome.trim(),
       formTipo.trim() || 'geral',
@@ -87,15 +89,9 @@ export default function MetasScreen() {
       alvo,
       formUnidade.trim() || null,
       hoje,
-      formFim.trim()
+      calcularDataFim(formPeriodo, hoje)
     )
-    setFormNome('')
-    setFormTipo('geral')
-    setFormEmoji('')
-    setFormAlvo('')
-    setFormUnidade('')
-    setFormFim('')
-    setCriando(false)
+    cancelarCriacao()
     await carregarDados()
   }
 
@@ -106,7 +102,7 @@ export default function MetasScreen() {
     setFormEmoji('')
     setFormAlvo('')
     setFormUnidade('')
-    setFormFim('')
+    setFormPeriodo('semestral')
   }
 
   async function confirmarExclusaoMeta() {
@@ -124,7 +120,7 @@ export default function MetasScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.titulo}>metas semestrais</Text>
+        <Text style={styles.titulo}>metas</Text>
         <TouchableOpacity onPress={() => setSugestaoVisivel(true)}>
           <Text style={styles.addBtn}>+</Text>
         </TouchableOpacity>
@@ -166,12 +162,10 @@ export default function MetasScreen() {
               onChangeText={setFormUnidade}
             />
           </View>
-          <TextInput
-            style={styles.input}
-            placeholder="data fim (2026-12-31)"
-            placeholderTextColor={cores.textoSuave}
-            value={formFim}
-            onChangeText={setFormFim}
+          <PeriodoSelector
+            valor={formPeriodo}
+            dataFim={calcularDataFim(formPeriodo, hojeISO())}
+            onChange={setFormPeriodo}
           />
           <View style={styles.formBotoes}>
             <TouchableOpacity style={styles.cancelarBtn} onPress={cancelarCriacao}>
@@ -249,7 +243,7 @@ export default function MetasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: cores.fundo, paddingTop: 60, paddingHorizontal: 24 },
+  container: { flex: 1, backgroundColor: cores.fundo, paddingTop: 8, paddingHorizontal: 24 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   titulo: { color: cores.texto, fontFamily: fontes.corpo, fontSize: tamanhos.titulo },
   addBtn: { color: cores.acento, fontSize: 28, lineHeight: 28 },
