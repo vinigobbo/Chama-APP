@@ -1,12 +1,15 @@
+
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { cores } from '../theme/colors'
 import { fontes, tamanhos } from '../theme/fonts'
 import { ORDEM_CATEGORIAS, nomeCategoria } from '../data/categorias'
 
+
 type Props = {
   valor: string
   onChange: (tipo: string) => void
 }
+
 
 export default function CategoriaSelector({ valor, onChange }: Props) {
   return (
