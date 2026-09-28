@@ -1,6 +1,7 @@
 import * as SQLite from 'expo-sqlite'
 import { CRIAR_TABELAS } from './schema'
 import { HABITOS_SUGERIDOS } from '../data/habitosSugeridos'
+import { importarTacoSeNecessario } from './importarTaco'
 
 let db: SQLite.SQLiteDatabase | null = null
 
@@ -11,6 +12,12 @@ export async function abrirBanco() {
     await db.execAsync(sql)
   }
   await migrar(db)
+  try {
+    await importarTacoSeNecessario(db)
+  } catch (e) {
+    // a transação desfaz tudo; o resto do app segue e a importação tenta de novo na próxima abertura
+    console.warn('falha ao importar a tabela TACO', e)
+  }
   return db
 }
 

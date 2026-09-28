@@ -54,4 +54,44 @@ export const CRIAR_TABELAS = [
     notas TEXT,
     ordem INTEGER NOT NULL DEFAULT 0
   )`,
+
+  // TACO 4ª ed. (NEPA/UNICAMP), valores por 100 g; null = não disponível na tabela
+  `CREATE TABLE IF NOT EXISTS alimentos_taco (
+    id INTEGER PRIMARY KEY,
+    nome TEXT NOT NULL,
+    nome_normalizado TEXT NOT NULL,
+    kcal REAL,
+    proteina REAL,
+    carboidrato REAL,
+    gordura REAL,
+    fibra REAL
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_alimentos_taco_nome ON alimentos_taco(nome_normalizado)`,
+
+  `CREATE TABLE IF NOT EXISTS refeicoes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data TEXT NOT NULL,
+    horario TEXT NOT NULL,
+    foto_uri TEXT,
+    status TEXT NOT NULL DEFAULT 'pendente'
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_refeicoes_data ON refeicoes(data)`,
+
+  // calorias/macros são o total do item (já multiplicados pelo peso)
+  `CREATE TABLE IF NOT EXISTS itens_refeicao (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    refeicao_id INTEGER NOT NULL,
+    nome TEXT NOT NULL,
+    peso_g REAL NOT NULL,
+    alimento_taco_id INTEGER,
+    calorias REAL,
+    proteina REAL,
+    carboidrato REAL,
+    gordura REAL,
+    editado_manual INTEGER NOT NULL DEFAULT 0
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_itens_refeicao_refeicao ON itens_refeicao(refeicao_id)`,
 ]

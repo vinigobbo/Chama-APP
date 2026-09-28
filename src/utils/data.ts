@@ -11,3 +11,12 @@ export function formatarISO(data: Date) {
 export function hojeISO() {
   return formatarISO(new Date())
 }
+
+// HH:MM pelo relógio local
+export function formatarHorario(data: Date) {
+  return `${pad(data.getHours())}:${pad(data.getMinutes())}`
+}
+
+export function horarioAgora() {
+  return formatarHorario(new Date())
+}

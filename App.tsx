@@ -9,10 +9,13 @@ import { Ionicons } from '@expo/vector-icons'
 import { cores } from './src/theme/colors'
 import { fontes } from './src/theme/fonts'
 import { abrirBanco } from './src/db/database'
+import { inicializarNotificacoes } from './src/notifications/scheduler'
 
 import HojeScreen from './src/screens/HojeScreen'
 import MetasScreen from './src/screens/MetasScreen'
 import AcademiaScreen from './src/screens/AcademiaScreen'
+import AlimentacaoScreen from './src/screens/AlimentacaoScreen'
+import RevisaoRefeicaoScreen from './src/screens/RevisaoRefeicaoScreen'
 import ConfigScreen from './src/screens/ConfigScreen'
 
 const Tab = createBottomTabNavigator()
@@ -60,6 +63,7 @@ function Abas() {
             Hoje: 'today-outline',
             Metas: 'flag-outline',
             Academia: 'barbell-outline',
+            Alimentação: 'restaurant-outline',
           }
           return <Ionicons name={icones[route.name]} size={size} color={color} />
         },
@@ -68,6 +72,7 @@ function Abas() {
       <Tab.Screen name="Hoje" component={HojeScreen} />
       <Tab.Screen name="Metas" component={MetasScreen} />
       <Tab.Screen name="Academia" component={AcademiaScreen} />
+      <Tab.Screen name="Alimentação" component={AlimentacaoScreen} />
     </Tab.Navigator>
   )
 }
@@ -82,6 +87,8 @@ export default function App() {
 
   useEffect(() => {
     async function iniciar() {
+      // no Expo Go não faz nada; no build instalado configura o handler como antes
+      inicializarNotificacoes()
       await abrirBanco()
       setBancoPronto(true)
     }
@@ -101,6 +108,7 @@ export default function App() {
       <Stack.Navigator screenOptions={{ ...cabecalho, contentStyle: { backgroundColor: cores.fundo } }}>
         <Stack.Screen name="Abas" component={Abas} options={{ headerShown: false }} />
         <Stack.Screen name="Config" component={ConfigScreen} options={{ title: 'configurações' }} />
+        <Stack.Screen name="RevisaoRefeicao" component={RevisaoRefeicaoScreen} options={{ title: 'refeição' }} />
       </Stack.Navigator>
     </NavigationContainer>
   )

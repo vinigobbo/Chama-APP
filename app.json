@@ -23,7 +23,16 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "o chama usa a câmera pra fotografar a sua refeição e identificar os alimentos.",
+          "photosPermission": "o chama acessa suas fotos pra você escolher a foto de uma refeição.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "extra": {
       "eas": {

@@ -22,6 +22,15 @@ Metas de longo prazo com valor atual vs. valor alvo (dinheiro a guardar, peso a 
 - Mapa de dias no estilo GitHub (quadradinhos que acendem nos dias que você foi à academia), com rolagem contínua pelas últimas semanas
 - Seção de treinos: monte suas rotinas (Superiores, Inferiores, etc.) escolhendo exercícios de uma lista organizada por grupo muscular, com espaço pra anotar séries e carga
 
+### 🍽️ Alimentação
+- Tire uma foto da refeição (ou escolha da galeria) e a IA identifica cada alimento e estima o peso da porção visível; dá pra registrar tudo à mão também
+- Toda refeição passa por uma revisão: troque o alimento, corrija os gramas, remova ou adicione itens antes de confirmar
+- Resumo do dia com calorias, proteína, carboidrato e gordura (só refeições confirmadas contam)
+
+Funciona em duas camadas: a **IA só identifica** o alimento e o peso (e aponta o item mais próximo da tabela); **calorias e macros sempre vêm da TACO**, a Tabela Brasileira de Composição de Alimentos, guardada no SQLite local. A IA nunca fornece valor nutricional.
+
+A identificação por foto usa o **Gemini com a chave de API do próprio usuário**, colada em Configurações e guardada no armazenamento seguro do aparelho. Nenhuma chave vem embutida no app. A foto é enviada ao Google; no plano gratuito do Gemini o conteúdo pode ser usado pra melhorar os produtos dele, no pago não.
+
 ### 🔔 Lembrete
 Notificação diária num horário fixo, avisando quais hábitos ainda faltam no dia.
 
@@ -30,8 +39,14 @@ Notificação diária num horário fixo, avisando quais hábitos ainda faltam no
 - **React Native** + **Expo** + **TypeScript**
 - **SQLite local** (`expo-sqlite`) — todo o banco de dados vive no próprio aparelho
 - **expo-notifications** para o lembrete diário
+- **expo-image-picker**, **expo-image-manipulator**, **expo-secure-store** e **expo-file-system** para a foto da refeição e a chave do Gemini
+- **Gemini API** (`gemini-3.5-flash-lite`) para identificar os alimentos
 - Build de produção via **EAS Build**
 
 ## Design
 
 Tema escuro minimalista, com um único acento âmbar usado de forma consistente em toda a interface — do streak ao grid de treinos — em vez de cores diferentes por seção.
+
+## Fonte dos dados nutricionais
+
+Tabela Brasileira de Composição de Alimentos – TACO, 4ª edição revisada e ampliada. NEPA/UNICAMP, Campinas, 2011. A obra permite reprodução total ou parcial desde que citada a fonte. O `assets/taco.json` é gerado por `scripts/converter-taco.js` a partir do CSV da TACO, conferido linha a linha contra o PDF oficial.
