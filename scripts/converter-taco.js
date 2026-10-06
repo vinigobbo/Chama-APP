@@ -1,15 +1,3 @@
-// Script de desenvolvimento: gera assets/taco.json a partir da TACO 4ª edição (NEPA/UNICAMP, 2011).
-// Não roda no app. Uso:
-//   node scripts/converter-taco.js <taco-db-nutrientes.csv> <taco_4_edicao_ampliada_e_revisada.pdf>
-//
-// Entradas (não versionadas):
-//   CSV: https://www.kaggle.com/datasets/ispangler/composio-nutricional-de-alimentos-taco (taco-db-nutrientes.csv)
-//   PDF: https://nepa.unicamp.br/wp-content/uploads/sites/27/2023/10/taco_4_edicao_ampliada_e_revisada.pdf
-//
-// O CSV é só um espelho: cada linha é conferida contra a tabela 1 do PDF oficial (umidade até magnésio)
-// e o nome gravado é o do PDF ("Arroz, tipo 1, cozido"), não o do espelho ("Arroz tipo 1 cozido").
-// Conversão dos valores: número -> número; "Tr" (traço) -> 0; "NA", "*" e vazio -> null.
-
 const fs = require('fs')
 const path = require('path')
 const zlib = require('zlib')
@@ -19,8 +7,6 @@ if (!csvPath || !pdfPath) {
   console.error('uso: node scripts/converter-taco.js <taco-db-nutrientes.csv> <taco.pdf>')
   process.exit(1)
 }
-
-// mesma regra de src/utils/texto.ts (o teste confere que batem)
 function normalizar(texto) {
   return texto
     .normalize('NFD')
@@ -45,7 +31,6 @@ function textoDoPdf(arquivo) {
       const partes = conteudo.match(/\((?:\\.|[^\\)])*\)/g) || []
       paginas.push(partes.map(p => p.slice(1, -1).replace(/\\([()\\])/g, '$1')).join(''))
     } catch (e) {
-      // stream que não é texto (imagem, fonte), ignora
     }
     re.lastIndex = fim
   }
@@ -76,13 +61,6 @@ function converterValor(v) {
 }
 
 const escapar = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-
-// Linhas em que o espelho está deslocado em relação ao PDF. Como o PDF não mostra as células vazias,
-// a comparação por texto não pega esse caso; por isso a correção é explícita e confere o formato esperado.
-// Nas bebidas alcoólicas o PDF traz uma nota de rodapé antes dos valores e o espelho leu esse
-// número como umidade, empurrando a linha uma coluna pra direita.
-// 472 (Cana, aguardente): PDF "¹ 216 902 ... NA NA Tr Tr" -> kcal 216, kJ 902. Energia vem do álcool, sem macros.
-// 474 (Cerveja, pilsen): PDF "² 92,4 41 170 0,6 Tr NA 3,3 NA 0,1 5 7" -> kcal 41, kJ 170, prot 0,6, lip Tr, carb 3,3.
 const CORRECOES = {
   472: {
     esperado: c => c[2] === '1' && c[3] === '' && c[4] === '216' && c[5] === '902',
@@ -101,8 +79,6 @@ const centesimal = textoDoPdf(pdfPath)
   .join(' ')
   .replace(/\s+/g, ' ')
 
-// colunas do CSV: 0 id, 1 nome, 2 umidade, 3 kcal, 4 kJ, 5 proteína, 6 lipídeos, 7 colesterol,
-// 8 carboidrato, 9 fibra, 10 cinzas, 11 cálcio, 12 magnésio
 const linhas = lerCsv(csvPath)
 const saida = []
 const falhas = []
@@ -137,7 +113,6 @@ for (const c of linhas) {
     kj = correcao.kj
   }
 
-  // pega deslocamento de coluna: kJ tem que ser ~4,184 × kcal
   if (valores.kcal !== null && kj !== null && Math.abs(kj - valores.kcal * 4.184) > Math.max(3, valores.kcal * 0.03)) {
     falhas.push(`${id}: kcal ${valores.kcal} e kJ ${kj} não batem`)
     continue
